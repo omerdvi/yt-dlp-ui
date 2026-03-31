@@ -205,7 +205,7 @@ def progress_card(percent: float, speed: str = "--", eta: str = "--", phase: str
 
 
 # ── UI: Title ─────────────────────────────────────────────────────────────────
-st.markdown("### ⬇ yt-dlp")
+st.markdown("### yt-dlp")
 st.markdown("")  # spacer
 
 # ── UI: Hero Row (URL + Download) ─────────────────────────────────────────────
@@ -221,7 +221,7 @@ with hero_l:
     )
 with hero_r:
     go = st.button(
-        "⬇ Download",
+        "Download",
         type="primary",
         use_container_width=True,
         disabled=is_downloading,
