@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import threading
 import queue
@@ -65,6 +66,9 @@ def build_command() -> list[str]:
     # Playlist handling
     cmd.append("--yes-playlist" if download_playlist else "--no-playlist")
 
+    # Force newline for parseable progress output
+    cmd.append("--newline")
+
     # Output template
     cmd += ["-o", os.path.join(DOWNLOADS_DIR, "%(playlist_title)s", "%(title)s.%(ext)s")]
 
@@ -117,7 +121,8 @@ if st.button("⬇ Download", type="primary", use_container_width=True):
         cmd = build_command()
         st.code(" ".join(cmd), language="bash")
 
-        progress_placeholder = st.empty()
+        progress_bar = st.progress(0)
+        status_text = st.empty()
         output_area = st.empty()
 
         try:
@@ -135,17 +140,36 @@ if st.button("⬇ Download", type="primary", use_container_width=True):
         t = threading.Thread(target=enqueue_output, args=(proc.stdout, q), daemon=True)
         t.start()
 
+        progress_re = re.compile(r"\[download\]\s+(\d+(?:\.\d+)?)%")
+        speed_eta_re = re.compile(r"at\s+(\S+)\s+ETA\s+(\S+)")
+        current_pct = 0.0
+
         output_lines: list[str] = []
         while proc.poll() is None or not q.empty():
             try:
                 line = q.get(timeout=0.1)
                 output_lines.append(line)
+
+                m = progress_re.search(line)
+                if m:
+                    current_pct = float(m.group(1))
+                    progress_bar.progress(min(int(current_pct), 100))
+                    se = speed_eta_re.search(line)
+                    if se:
+                        status_text.text(f"Downloading... {current_pct:.1f}%  |  Speed: {se.group(1)}  |  ETA: {se.group(2)}")
+                    else:
+                        status_text.text(f"Downloading... {current_pct:.1f}%")
+                elif current_pct >= 100:
+                    if "[ffmpeg]" in line or "[ExtractAudio]" in line:
+                        status_text.text("Post-processing...")
+
                 output_area.text_area("Output", "".join(output_lines), height=350)
             except queue.Empty:
                 pass
 
         proc.wait()
         if proc.returncode == 0:
-            progress_placeholder.success("Download completed successfully!")
+            progress_bar.progress(100)
+            status_text.success("Download completed successfully!")
         else:
-            progress_placeholder.error(f"Process exited with code {proc.returncode}")
+            status_text.error(f"Process exited with code {proc.returncode}")
