@@ -10,9 +10,10 @@ import streamlit.components.v1 as components
 DOWNLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads")
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 YTDLP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "yt-dlp.exe")
+LOGO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo_youtube_downloader.png")
 
 # ── Page Config ───────────────────────────────────────────────────────────────
-st.set_page_config(page_title="yt-dlp", page_icon="⬇", layout="centered")
+st.set_page_config(page_title="Omer's Youtube Downloader", page_icon="⬇", layout="centered")
 
 # ── Session State Defaults ────────────────────────────────────────────────────
 if "downloading" not in st.session_state:
@@ -204,8 +205,13 @@ def progress_card(percent: float, speed: str = "--", eta: str = "--", phase: str
     return components.html(html, height=105)
 
 
-# ── UI: Title ─────────────────────────────────────────────────────────────────
-st.markdown("### yt-dlp")
+# ── UI: Logo & Title ──────────────────────────────────────────────────────────
+lc, mc, rc = st.columns([1, 2, 1])
+with mc:
+    if os.path.exists(LOGO_PATH):
+        st.image(LOGO_PATH, use_container_width=True)
+    else:
+        st.markdown("### Omer's Youtube Downloader")
 st.markdown("")  # spacer
 
 # ── UI: Hero Row (URL + Download) ─────────────────────────────────────────────
